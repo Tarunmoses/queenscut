@@ -1,0 +1,20 @@
+{
+  "name": "queenscut",
+  "private": true,
+  "version": "0.1.0",
+  "description": "QueensCut boutique management monorepo (backend, web, mobile, shared)",
+  "workspaces": [
+    "backend",
+    "web",
+    "mobile",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "npm run start:dev --workspace backend",
+    "dev:web": "npm run dev --workspace web",
+    "dev:mobile": "npm run start --workspace mobile",
+    "build:shared": "npm run build --workspace shared",
+    "build:backend": "npm run build --workspace backend",
+    "build:web": "npm run build --workspace web"
+  }
+}
