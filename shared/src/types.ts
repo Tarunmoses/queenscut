@@ -79,7 +79,34 @@ export interface Expense {
   amount: number;
   date: string;
   category?: string;
+  /** Write-side only: pass order ids to link when creating/updating an expense. */
   orderIds?: string[];
+  /** Read-side: the hydrated orders this expense is linked to (direct link or via a usage line). */
+  orders?: Order[];
+  usageLines?: InventoryUsage[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** A single inventory consumption event, optionally logged as part of an Expense. */
+export interface InventoryUsage {
+  id: string;
+  inventoryItemId: string;
+  inventoryItem?: InventoryItem;
+  orderId: string;
+  order?: Order;
+  orderItemId: string;
+  orderItem?: OrderItem;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  expenseId?: string;
+  createdAt: string;
+}
+
+export interface CreateInventoryUsageInput {
+  inventoryItemId: string;
+  orderId: string;
+  orderItemId: string;
+  quantity: number;
 }

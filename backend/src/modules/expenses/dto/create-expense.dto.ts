@@ -1,4 +1,15 @@
-import { IsArray, IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsDateString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { UsageLineDto } from './usage-line.dto';
 
 export class CreateExpenseDto {
   @IsString()
@@ -19,4 +30,10 @@ export class CreateExpenseDto {
   @IsArray()
   @IsOptional()
   orderIds?: string[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => UsageLineDto)
+  usageLines?: UsageLineDto[];
 }

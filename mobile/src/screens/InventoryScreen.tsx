@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { InventoryItem } from '@queenscut/shared';
+import { InventoryItem, InventoryUsage, shortOrderId } from '@queenscut/shared';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { api } from '../api/client';
@@ -18,11 +18,16 @@ const UNIT_TYPES = ['Meters', 'Spools', 'Pieces', 'Kg', 'Grams', 'Liters'];
 export function InventoryScreen() {
   const [tab, setTab] = useState(TABS[0]);
   const [items, setItems] = useState<InventoryItem[] | null>(null);
+  const [usage, setUsage] = useState<InventoryUsage[] | null>(null);
   const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
-    const data = await api.get<InventoryItem[]>('/inventory');
-    setItems(data);
+    const [itemsData, usageData] = await Promise.all([
+      api.get<InventoryItem[]>('/inventory'),
+      api.get<InventoryUsage[]>('/inventory/usage'),
+    ]);
+    setItems(itemsData);
+    setUsage(usageData);
   }, []);
 
   useFocusEffect(
@@ -81,12 +86,35 @@ export function InventoryScreen() {
       )}
 
       {tab === 'History' && (
-        <View style={styles.center}>
-          <Text style={styles.empty}>
-            Stock movement history isn't tracked yet — this is a good next addition once stock
-            adjustments need an audit trail.
-          </Text>
-        </View>
+        usage ? (
+          <FlatList
+            data={usage.filter((u) =>
+              u.inventoryItem?.itemName.toLowerCase().includes(search.toLowerCase()),
+            )}
+            keyExtractor={(u) => u.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item: u }) => (
+              <Card style={styles.itemCard}>
+                <View style={styles.itemRow}>
+                  <Text style={styles.itemName}>{u.inventoryItem?.itemName}</Text>
+                  <Text style={styles.usageQty}>
+                    {u.quantity} {u.inventoryItem?.unitType.toLowerCase()}
+                  </Text>
+                </View>
+                <Text style={styles.itemMeta}>
+                  {new Date(u.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} •{' '}
+                  {shortOrderId(u.orderId)} · {u.order?.customer?.name}
+                </Text>
+                <Text style={styles.usageSuborder}>{u.orderItem?.apparelType}</Text>
+              </Card>
+            )}
+            ListEmptyComponent={<Text style={styles.empty}>No material usage logged yet.</Text>}
+          />
+        ) : (
+          <View style={styles.center}>
+            <ActivityIndicator color={colors.secondary} />
+          </View>
+        )
       )}
     </View>
   );
@@ -156,5 +184,7 @@ const styles = StyleSheet.create({
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   itemName: { fontSize: fontSize.bodyLg, fontWeight: '600', color: colors.text },
   itemMeta: { fontSize: fontSize.small, color: colors.textSecondary, marginTop: 4 },
+  usageQty: { fontSize: fontSize.bodyLg, fontWeight: '600', color: colors.primary },
+  usageSuborder: { fontSize: fontSize.caption, color: colors.textTertiary, marginTop: 2 },
   empty: { textAlign: 'center', color: colors.textTertiary, padding: spacing.lg },
 });

@@ -1,5 +1,6 @@
-import { Column, Entity, JoinTable, ManyToMany } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { InventoryUsage } from '../../inventory/entities/inventory-usage.entity';
 import { Order } from '../../orders/entities/order.entity';
 
 @Entity('expenses')
@@ -23,4 +24,7 @@ export class Expense extends BaseEntity {
     inverseJoinColumn: { name: 'order_id', referencedColumnName: 'id' },
   })
   orders?: Order[];
+
+  @OneToMany(() => InventoryUsage, (usage) => usage.expense)
+  usageLines?: InventoryUsage[];
 }
