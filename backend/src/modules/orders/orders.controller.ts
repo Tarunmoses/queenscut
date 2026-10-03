@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderItemDto } from './dto/update-order-item.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrdersService } from './orders.service';
 
@@ -25,6 +26,15 @@ export class OrdersController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateOrderDto) {
     return this.ordersService.update(id, dto);
+  }
+
+  @Patch(':id/items/:itemId')
+  updateItem(
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Body() dto: UpdateOrderItemDto,
+  ) {
+    return this.ordersService.updateItem(id, itemId, dto);
   }
 
   @Delete(':id')

@@ -4,6 +4,7 @@ import { PaymentStatus } from '@queenscut/shared';
 import { Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { UpdateOrderItemDto } from './dto/update-order-item.dto';
 import { OrderItem } from './entities/order-item.entity';
 import { Order } from './entities/order.entity';
 
@@ -61,6 +62,11 @@ export class OrdersService {
   async update(id: string, dto: UpdateOrderDto): Promise<Order> {
     const order = await this.findOne(id);
 
+    // NOTE: replacing dto.items wholesale (delete + recreate) is unsafe once an
+    // order item has InventoryUsage rows pointing at it (FK is ON DELETE
+    // RESTRICT) — it isn't currently called by the mobile app (which edits a
+    // single item via updateItem() below instead), but fix this properly
+    // before wiring any UI to it.
     if (dto.items) {
       await this.orderItemsRepository.delete({ orderId: id });
       order.items = dto.items.map((item) => this.orderItemsRepository.create(item));
@@ -70,14 +76,36 @@ export class OrdersService {
     Object.assign(order, rest);
 
     if (dto.items || dto.advanceReceived !== undefined) {
-      order.totalAmount = order.items.reduce((sum, item) => sum + Number(item.amountCharged), 0);
-      order.balanceDue = dto.balanceDue ?? order.totalAmount - Number(order.advanceReceived);
-      if (!dto.paymentStatus) {
-        order.paymentStatus = this.derivePaymentStatus(order.totalAmount, Number(order.advanceReceived));
-      }
+      this.recomputeTotals(order, { keepPaymentStatus: !!dto.paymentStatus, balanceDueOverride: dto.balanceDue });
     }
 
     return this.ordersRepository.save(order);
+  }
+
+  /** Edits a single order item in place (no delete/recreate), then recomputes the parent order's totals. */
+  async updateItem(orderId: string, itemId: string, dto: UpdateOrderItemDto): Promise<Order> {
+    const order = await this.findOne(orderId);
+    const item = order.items.find((i) => i.id === itemId);
+    if (!item) {
+      throw new NotFoundException(`Item ${itemId} not found on order ${orderId}`);
+    }
+
+    Object.assign(item, dto);
+    await this.orderItemsRepository.save(item);
+
+    this.recomputeTotals(order, { keepPaymentStatus: false });
+    return this.ordersRepository.save(order);
+  }
+
+  private recomputeTotals(
+    order: Order,
+    options: { keepPaymentStatus: boolean; balanceDueOverride?: number },
+  ): void {
+    order.totalAmount = order.items.reduce((sum, item) => sum + Number(item.amountCharged), 0);
+    order.balanceDue = options.balanceDueOverride ?? order.totalAmount - Number(order.advanceReceived);
+    if (!options.keepPaymentStatus) {
+      order.paymentStatus = this.derivePaymentStatus(order.totalAmount, Number(order.advanceReceived));
+    }
   }
 
   async remove(id: string): Promise<void> {

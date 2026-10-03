@@ -4,7 +4,10 @@ import { CreateOrderProvider } from '../screens/createOrder/CreateOrderContext';
 import { CreateOrderReviewScreen } from '../screens/createOrder/CreateOrderReviewScreen';
 import { CreateOrderStep1Screen } from '../screens/createOrder/CreateOrderStep1Screen';
 import { CreateOrderStep2Screen } from '../screens/createOrder/CreateOrderStep2Screen';
+import { EditMeasurementsScreen } from '../screens/EditMeasurementsScreen';
 import { HomeScreen } from '../screens/HomeScreen';
+import { OrderItemDetailScreen } from '../screens/OrderItemDetailScreen';
+import { SearchOrdersScreen } from '../screens/SearchOrdersScreen';
 import { ViewOrderScreen } from '../screens/ViewOrderScreen';
 
 export type HomeStackParamList = {
@@ -14,6 +17,9 @@ export type HomeStackParamList = {
   AddItem: { editIndex?: number } | undefined;
   CreateOrderReview: undefined;
   ViewOrder: { orderId: string };
+  OrderItemDetail: { orderId: string; orderItemId: string };
+  EditMeasurements: { orderId: string; orderItemId: string };
+  SearchOrders: undefined;
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -28,6 +34,13 @@ export function HomeStack() {
         <Stack.Screen name="AddItem" component={AddItemScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="CreateOrderReview" component={CreateOrderReviewScreen} />
         <Stack.Screen name="ViewOrder" component={ViewOrderScreen} />
+        <Stack.Screen name="OrderItemDetail" component={OrderItemDetailScreen} />
+        <Stack.Screen
+          name="EditMeasurements"
+          component={EditMeasurementsScreen}
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen name="SearchOrders" component={SearchOrdersScreen} />
       </Stack.Navigator>
     </CreateOrderProvider>
   );
